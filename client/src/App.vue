@@ -12,9 +12,68 @@ export default {
       content: null,
       htmlCode: "",
       text: "",
+      langOption: null,
     };
   },
   methods: {
+    async speechCreate() {
+      if(this.langOption == "ID"){
+        const speech = new Speech();
+        speech.setLanguage("id-ID");
+        await speech.init({
+          volume: 0.5,
+          lang: "id-ID",
+          rate: 1,
+          pitch: 1,
+          name: "Google Bahasa Indonesia",
+          voiceURI: "Google Bahasa Indonesia",
+          splitSentences: true,
+        });
+        speech.speak({
+          text: this.textDefault,
+        });
+      }
+      else if(this.langOption === "EN"){
+        const speech = new Speech();
+        speech.init({
+          volume: 1,
+          lang: "en-GB",
+          rate: 1,
+          pitch: 1,
+          voice: "Google UK English Female",
+          splitSentences: true,
+        });
+        speech.speak({
+          text: this.textDefault,
+        });
+      }
+      else if(this.langOption === "JV"){
+        const speech = new Speech();
+        speech.setLanguage("jv-ID");
+        await speech.init({
+          volume: 0.5,
+          lang: "jv-ID",
+          rate: 1,
+          pitch: 1,
+          name: "Microsoft Siti Online (Natural) - Javanese (Indonesia)",
+          voiceURI: "Microsoft Siti Online (Natural) - Javanese (Indonesia)",
+          splitSentences: true,
+          listeners: {
+            onvoiceschanged: (voices) => {
+              console.log("Event voiceschanged", voices);
+            },
+          },
+        });
+        speech
+          .speak({
+            text: this.textDefault,
+          })
+          .then(() => {
+            console.log("Success !");
+          });
+        console.log(voice);
+      }
+    },
     async speakEnglish() {
       event.preventDefault();
       try {
@@ -160,18 +219,29 @@ Online (Natural) - Indonesian (Indonesia)" voiceURI : "Microsoft Gadis Online
           ></textarea>
           <br />
           <div class="d-flex gap-2">
-            <button @click="speakIndonesian()" class="btn btn-primary">
-              Indonesian
+            <button @click="speechCreate()" class="btn btn-primary">
+              Speak
             </button>
-            <button @click="speakJavanese()" class="btn btn-primary">
+            <select class="form-select" aria-label="Default select example" v-model="langOption" @change="">
+              <option selected>Open this select menu</option>
+              <option value="ID">Bahasa Indonesia</option>
+              <option value="EN">Bahasa Inggris</option>
+              <option value="JV">Bahasa Jawa</option>
+            </select>
+            <!-- <button @click="speakJavanese()" class="btn btn-primary">
               Javanese
             </button>
             <button @click="speakEnglish()" class="btn btn-primary">
               English
-            </button>
+            </button> -->
             <div class="">
-              <input class="form-control" type="file" id="formFile" ref="doc"
-              @change="readFile()" />
+              <input
+                class="form-control"
+                type="file"
+                id="formFile"
+                ref="doc"
+                @change="readFile()"
+              />
             </div>
           </div>
         </div>
