@@ -5,10 +5,9 @@ import axios from "axios";
 export default {
   data() {
     return {
-      textEnglish: "",
-      textIndonesian: "",
-      textJavanese: "",
-      translateDefault: ""
+      textDefault: "",
+      translateDefault: "",
+      translatedText: "",
     };
   },
   methods: {
@@ -23,14 +22,9 @@ export default {
           pitch: 1,
           voice: "Google UK English Male",
           splitSentences: true,
-          listeners: {
-            onvoiceschanged: (voices) => {
-              console.log("Event voiceschanged", voices);
-            },
-          },
         });
         speech.speak({
-          text: this.textIndonesian,
+          text: this.textDefault,
         });
       } catch (err) {
         console.error("An error occurred :", err);
@@ -41,7 +35,7 @@ export default {
       try {
         const speech = new Speech();
         speech.setLanguage("id-ID");
-        speech.init({
+        await speech.init({
           volume: 0.5,
           lang: "id-ID",
           rate: 1,
@@ -49,14 +43,9 @@ export default {
           name: "Google Bahasa Indonesia",
           voiceURI: "Google Bahasa Indonesia",
           splitSentences: true,
-          listeners: {
-            onvoiceschanged: (voices) => {
-              // console.log("Event voiceschanged", voices);
-            },
-          },
         });
         speech.speak({
-          text: this.textIndonesian,
+          text: this.textDefault,
         });
       } catch (err) {
         console.log(err);
@@ -67,7 +56,7 @@ export default {
       try {
         const speech = new Speech();
         speech.setLanguage("jv-ID");
-        speech.init({
+        await speech.init({
           volume: 0.5,
           lang: "jv-ID",
           rate: 1,
@@ -75,15 +64,10 @@ export default {
           name: "Microsoft Dimas Online (Natural) - Javanese (Indonesia)",
           voiceURI: "Microsoft Dimas Online (Natural) - Javanese (Indonesia)",
           splitSentences: true,
-          listeners: {
-            onvoiceschanged: (voices) => {
-              console.log("Event voiceschanged", voices);
-            },
-          },
         });
         speech
           .speak({
-            text: this.textIndonesian,
+            text: this.textDefault,
           })
           .then(() => {
             console.log("Success !");
@@ -93,16 +77,38 @@ export default {
         console.log(err);
       }
     },
-    async translateToEnglish(){
+    async translateToEnglish() {
       try {
-        await axios.post("http://localhost:8000/translate", {
-          textDefault: this.translateDefault
-        })
+        const res = await axios.post("http://localhost:8000/translate", {
+          textDefault: this.translateDefault,
+        });
+        this.translatedText = res.data.data;
+        console.log(res.data.data);
+      } catch (err) {
+        console.log(err);
       }
-      catch (err){
-        console.log(err)
+    },
+    async downloadTranslatedText() {
+      try {
+        const res = await axios.get(
+          "http://localhost:8000/translate/downloadtxt",
+          {
+            responseType: "blob",
+            textDef: this.translateDefault
+          }
+        );
+        const url = window.URL.createObjectURL(new Blob([res.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute("download", "translated.txt");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        console.log(textDef)
+      } catch (err) {
+        console.log(err);
       }
-    }
+    },
   },
 };
 </script>
@@ -112,81 +118,41 @@ export default {
     <h1>Tekmul woy</h1>
   </div>
   <div class="container text-center mt-2 pt-2">
-    <!-- <div class="row">
-      <div class="col">
-        <div class="card">
-          <div class="card-header">English</div>
-          <div class="card-body">
-            <textarea
-              class="form-control"
-              id="floatingTextarea2Disabled"
-              style="height: 100px"
-              v-model="textEnglish"
-            ></textarea>
-            <br />
-            <button
-              @click="speakEnglish()"
-              class="btn btn-primary"
-              method="POST"
-            >
+    <div class="col">
+      <div class="card">
+        <div class="card-header">Text-to-Speech</div>
+        <div class="card-body grid gap-0 column-gap-2 p-2 m-2 g-col-6">
+          <textarea
+            class="form-control"
+            id="floatingTextarea2Disabled"
+            style="height: 100px"
+            v-model="textDefault"
+          ></textarea>
+          <br />
+          <div class="d-flex gap-2">
+            <button @click="speakIndonesian()" class="btn btn-primary">
+              Indonesian
+            </button>
+            <button @click="speakJavanese()" class="btn btn-primary">
+              Javanese
+            </button>
+            <button @click="speakEnglish()" class="btn btn-primary">
               English
             </button>
           </div>
         </div>
-      </div> -->
-      <div class="col">
-        <div class="card">
-          <div class="card-header">Text-to-Speech</div>
-          <div class="card-body grid gap-0 column-gap-2 p-2 m-2 g-col-6">
-            <textarea
-              class="form-control"
-              id="floatingTextarea2Disabled"
-              style="height: 100px"
-              v-model="textIndonesian"
-            ></textarea>
-            <br />
-            <div class="d-flex gap-2">
-              <button @click="speakIndonesian()" class="btn btn-primary">
-                Indonesian
-              </button>
-              <button @click="speakJavanese()" class="btn btn-primary">
-                Javanese
-              </button>
-              <button @click="speakEnglish()" class="btn btn-primary">
-                English
-              </button>
-            </div>
-          </div>
-        </div>
       </div>
-      <!-- <div class="col">
-        <div class="card">
-          <div class="card-header">Javanese</div>
-          <div class="card-body">
-            <textarea
-              class="form-control"
-              id="floatingTextarea2Disabled"
-              style="height: 100px"
-              v-model="textJavanese"
-            ></textarea
-            ><br />
-            <button @click="speakJavanese()" class="btn btn-primary">
-              Javanese
-            </button>
-          </div>
-        </div>
-      </div>
-    </div> -->
+    </div>
   </div>
 
-    <br /><br />
+  <br /><br />
 
-    <div class="container text-center">
-      <div class="mb-3 label-translate-container">
-        <div class="pb-3 label-translate">
-          <label for="">Translate</label>
-        </div>
+  <div class="container text-center">
+    <div class="mb-3 label-translate-container">
+      <div class="pb-3 label-translate">
+        <label for="">Translate</label>
       </div>
+    </div>
     <div class="row">
       <div class="col">
         <div class="card">
@@ -196,18 +162,25 @@ export default {
               class="form-control"
               id="floatingTextarea2Disabled"
               style="height: 100px"
-              v-model="textEnglish"
             ></textarea>
             <br />
-            <div class="d-flex gap-2">
-            <button
-            @click="speakEnglish()"
-            class="btn btn-primary"
-            method="POST"
-            >
-            English
-          </button>
-          </div>
+            <div class="d-flex flex-row dropdown">
+              <button
+                type="button"
+                class="btn btn-info dropdown-toggle"
+                data-bs-toggle="dropdown"
+                aria-expanded="false"
+              >
+                Action
+              </button>
+              <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="#">Bahasa Indonesia</a></li>
+                <li><a class="dropdown-item" href="#">English</a></li>
+                <li>
+                  <a class="dropdown-item" href="#">Bahasa Jawa</a>
+                </li>
+              </ul>
+            </div>
           </div>
         </div>
       </div>
@@ -227,7 +200,22 @@ export default {
                 Translate
               </button>
             </div>
+            <div class="d-flex justify-content-end gap-2">
+              <button @click="downloadTranslatedText()" class="btn btn-primary">
+                Download
+              </button>
+            </div>
           </div>
+        </div>
+      </div>
+    </div>
+    <br /><br />
+    <div class="card">
+      <div class="card-body">
+        <div style="background-color: bisque">
+          <h1>
+            {{ translatedText }}
+          </h1>
         </div>
       </div>
     </div>
@@ -242,5 +230,4 @@ export default {
 .label-translate-container {
   background-color: beige;
 }
-
 </style>
