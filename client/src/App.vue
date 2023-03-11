@@ -17,7 +17,7 @@ export default {
   },
   methods: {
     async speechCreate() {
-      if(this.langOption == "ID"){
+      if (this.langOption == "ID") {
         const speech = new Speech();
         speech.setLanguage("id-ID");
         await speech.init({
@@ -32,8 +32,7 @@ export default {
         speech.speak({
           text: this.textDefault,
         });
-      }
-      else if(this.langOption === "EN"){
+      } else if (this.langOption === "EN") {
         const speech = new Speech();
         speech.init({
           volume: 1,
@@ -46,8 +45,7 @@ export default {
         speech.speak({
           text: this.textDefault,
         });
-      }
-      else if(this.langOption === "JV"){
+      } else if (this.langOption === "JV") {
         const speech = new Speech();
         speech.setLanguage("jv-ID");
         await speech.init({
@@ -72,60 +70,16 @@ export default {
             console.log("Success !");
           });
         console.log(voice);
-      }
-    },
-    async speakEnglish() {
-      event.preventDefault();
-      try {
+      } else if (this.langOption === "FR") {
         const speech = new Speech();
-        speech.init({
-          volume: 1,
-          lang: "en-GB",
-          rate: 1,
-          pitch: 1,
-          voice: "Google UK English Female",
-          splitSentences: true,
-        });
-        speech.speak({
-          text: this.textDefault,
-        });
-      } catch (err) {
-        console.error("An error occurred :", err);
-      }
-    },
-    async speakIndonesian() {
-      event.preventDefault();
-      try {
-        const speech = new Speech();
-        speech.setLanguage("id-ID");
+        speech.setLanguage("fr-FR");
         await speech.init({
           volume: 0.5,
-          lang: "id-ID",
+          lang: "fr-FR",
           rate: 1,
           pitch: 1,
-          name: "Google Bahasa Indonesia",
-          voiceURI: "Google Bahasa Indonesia",
-          splitSentences: true,
-        });
-        speech.speak({
-          text: this.textDefault,
-        });
-      } catch (err) {
-        console.log(err);
-      }
-    },
-    async speakJavanese() {
-      event.preventDefault();
-      try {
-        const speech = new Speech();
-        speech.setLanguage("jv-ID");
-        await speech.init({
-          volume: 0.5,
-          lang: "jv-ID",
-          rate: 1,
-          pitch: 1,
-          name: "Microsoft Siti Online (Natural) - Javanese (Indonesia)",
-          voiceURI: "Microsoft Siti Online (Natural) - Javanese (Indonesia)",
+          name: "Microsoft Eloise Online (Natural) - French (France)",
+          voiceURI: "Microsoft Eloise Online (Natural) - French (France)",
           splitSentences: true,
           listeners: {
             onvoiceschanged: (voices) => {
@@ -141,37 +95,35 @@ export default {
             console.log("Success !");
           });
         console.log(voice);
-      } catch (err) {
-        console.log(err);
       }
     },
-    async translateToEnglish() {
+    async speakArabic() {
+      event.preventDefault();
       try {
-        const res = await axios.post("http://localhost:8000/translate", {
-          textDefault: this.translateDefault,
+        const speech = new Speech();
+        speech.setLanguage("jv-ID");
+        await speech.init({
+          volume: 0.5,
+          lang: "jv-ID",
+          rate: 1,
+          pitch: 1,
+          name: "Microsoft Eloise Online (Natural) - French (France)",
+          voiceURI: "Microsoft Eloise Online (Natural) - French (France)",
+          splitSentences: true,
+          listeners: {
+            onvoiceschanged: (voices) => {
+              console.log("Event voiceschanged", voices);
+            },
+          },
         });
-        this.translatedText = res.data.data;
-        console.log(res.data.data);
-      } catch (err) {
-        console.log(err);
-      }
-    },
-    async downloadTranslatedText() {
-      try {
-        const res = await axios.get(
-          "http://localhost:8000/translate/downloadtxt",
-          {
-            responseType: "blob",
-            textDef: this.translateDefault,
-          }
-        );
-        const url = window.URL.createObjectURL(new Blob([res.data]));
-        const link = document.createElement("a");
-        link.href = url;
-        link.setAttribute("download", "translated.txt");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        speech
+          .speak({
+            text: this.textDefault,
+          })
+          .then(() => {
+            console.log("Success !");
+          });
+        console.log(voice);
       } catch (err) {
         console.log(err);
       }
@@ -193,6 +145,9 @@ export default {
         reader.onerror = (err) => console.log(err);
         reader.readAsText(this.file);
       }
+    },
+    clearText() {
+      this.textDefault = "";
     },
   },
 };
@@ -218,23 +173,23 @@ Online (Natural) - Indonesian (Indonesia)" voiceURI : "Microsoft Gadis Online
             v-model="textDefault"
           ></textarea>
           <br />
-          <div class="d-flex gap-2">
+          <div class="d-flex gap-2 lang-select">
             <button @click="speechCreate()" class="btn btn-primary">
               Speak
             </button>
-            <select class="form-select" aria-label="Default select example" v-model="langOption" @change="">
+            <select
+              class="form-select"
+              aria-label="Default select example"
+              v-model="langOption"
+              @change=""
+            >
               <option selected>Open this select menu</option>
               <option value="ID">Bahasa Indonesia</option>
               <option value="EN">Bahasa Inggris</option>
               <option value="JV">Bahasa Jawa</option>
+              <option value="FR">Bahasa Perancis</option>
             </select>
-            <!-- <button @click="speakJavanese()" class="btn btn-primary">
-              Javanese
-            </button>
-            <button @click="speakEnglish()" class="btn btn-primary">
-              English
-            </button> -->
-            <div class="">
+            <div class="doc-select">
               <input
                 class="form-control"
                 type="file"
@@ -243,83 +198,16 @@ Online (Natural) - Indonesian (Indonesia)" voiceURI : "Microsoft Gadis Online
                 @change="readFile()"
               />
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+            <div class="d-flex flex-row">
+              <button @click="clearText()" class="btn btn-primary">
+                Clear
+              </button>
+            </div>
 
-  <br /><br />
-
-  <div class="container text-center">
-    <div class="mb-3 label-translate-container">
-      <div class="pb-3 label-translate">
-        <label for="">Translate</label>
-      </div>
-    </div>
-    <div class="row">
-      <div class="col">
-        <div class="card">
-          <div class="card-header">From</div>
-          <div class="card-body">
-            <textarea
-              class="form-control"
-              id="floatingTextarea2Disabled"
-              style="height: 100px"
-            ></textarea>
-            <br />
-            <div class="d-flex flex-row dropdown">
-              <button
-                type="button"
-                class="btn btn-info dropdown-toggle"
-                data-bs-toggle="dropdown"
-                aria-expanded="false"
-              >
-                Action
-              </button>
-              <ul class="dropdown-menu">
-                <li><a class="dropdown-item" href="#">Bahasa Indonesia</a></li>
-                <li><a class="dropdown-item" href="#">English</a></li>
-                <li>
-                  <a class="dropdown-item" href="#">Bahasa Jawa</a>
-                </li>
-              </ul>
-            </div>
+            <!-- <button @click="()" class="btn btn-primary">
+              Stop
+            </button> -->
           </div>
-        </div>
-      </div>
-      <div class="col">
-        <div class="card">
-          <div class="card-header">To</div>
-          <div class="card-body grid gap-0 column-gap-2 p-2 m-2 g-col-6">
-            <textarea
-              class="form-control"
-              id="floatingTextarea2Disabled"
-              style="height: 100px"
-              v-model="translateDefault"
-            ></textarea>
-            <br />
-            <div class="d-flex gap-2">
-              <button @click="translateToEnglish()" class="btn btn-primary">
-                Translate
-              </button>
-            </div>
-            <div class="d-flex justify-content-end gap-2">
-              <button @click="downloadTranslatedText()" class="btn btn-primary">
-                Download
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-    <br /><br />
-    <div class="card">
-      <div class="card-body">
-        <div style="background-color: bisque">
-          <h1>
-            {{ translatedText }}
-          </h1>
         </div>
       </div>
     </div>
@@ -327,11 +215,11 @@ Online (Natural) - Indonesian (Indonesia)" voiceURI : "Microsoft Gadis Online
 </template>
 
 <style>
-.label-translate {
-  font-size: larger;
+.lang-select {
+  width: 700px;
 }
 
-.label-translate-container {
-  background-color: beige;
+.doc-select {
+  width: 900px;
 }
 </style>
