@@ -8,6 +8,10 @@ export default {
       textDefault: "",
       translateDefault: "",
       translatedText: "",
+      file: null,
+      content: null,
+      htmlCode: "",
+      text: "",
     };
   },
   methods: {
@@ -20,7 +24,7 @@ export default {
           lang: "en-GB",
           rate: 1,
           pitch: 1,
-          voice: "Google UK English Male",
+          voice: "Google UK English Female",
           splitSentences: true,
         });
         speech.speak({
@@ -61,9 +65,14 @@ export default {
           lang: "jv-ID",
           rate: 1,
           pitch: 1,
-          name: "Microsoft Dimas Online (Natural) - Javanese (Indonesia)",
-          voiceURI: "Microsoft Dimas Online (Natural) - Javanese (Indonesia)",
+          name: "Microsoft Siti Online (Natural) - Javanese (Indonesia)",
+          voiceURI: "Microsoft Siti Online (Natural) - Javanese (Indonesia)",
           splitSentences: true,
+          listeners: {
+            onvoiceschanged: (voices) => {
+              console.log("Event voiceschanged", voices);
+            },
+          },
         });
         speech
           .speak({
@@ -94,7 +103,7 @@ export default {
           "http://localhost:8000/translate/downloadtxt",
           {
             responseType: "blob",
-            textDef: this.translateDefault
+            textDef: this.translateDefault,
           }
         );
         const url = window.URL.createObjectURL(new Blob([res.data]));
@@ -104,14 +113,35 @@ export default {
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        console.log(textDef)
       } catch (err) {
         console.log(err);
+      }
+    },
+    readFile() {
+      this.file = this.$refs.doc.files[0];
+      const reader = new FileReader();
+      if (this.file.name.includes(".txt")) {
+        reader.onload = (res) => {
+          this.textDefault = res.target.result;
+        };
+        reader.onerror = (err) => console.log(err);
+        reader.readAsText(this.file);
+      } else {
+        this.textDefault = "check the console for file output";
+        reader.onload = (res) => {
+          console.log(res.target.result);
+        };
+        reader.onerror = (err) => console.log(err);
+        reader.readAsText(this.file);
       }
     },
   },
 };
 </script>
+
+/* default : false lang : "id-ID" localService : false name : "Microsoft Gadis
+Online (Natural) - Indonesian (Indonesia)" voiceURI : "Microsoft Gadis Online
+(Natural) - Indonesian (Indonesia)" */
 
 <template>
   <div class="container text-center mb-3 pb-3">
@@ -139,6 +169,10 @@ export default {
             <button @click="speakEnglish()" class="btn btn-primary">
               English
             </button>
+            <div class="">
+              <input class="form-control" type="file" id="formFile" ref="doc"
+              @change="readFile()" />
+            </div>
           </div>
         </div>
       </div>

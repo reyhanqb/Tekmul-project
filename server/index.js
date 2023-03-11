@@ -63,14 +63,20 @@ app.post("/translate", async (req, res) => {
 app.get("/translate/downloadtxt", async (req, res) => {
   let textDef = req.body.textDef;
   try {
+    if (!textDef) {
+      throw new Error("No text provided");
+    }
     const blob = new Blob([textDef], { type: "text/plain" });
-    const fileName = "translated.txt";
+    const downloadUrl = URL.createObjectURL(blob);
 
-    res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+    res.setHeader(
+      "Content-Disposition",
+      'attachment; filename="translated.txt"'
+    );
     res.setHeader("Content-Type", "text/plain");
 
-    res.write(await blob.text());
-    res.end();
+    const stream = request.get(downloadUrl);
+    stream.pipe(res);
   } catch (err) {
     console.log(err);
   }
