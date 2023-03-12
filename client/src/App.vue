@@ -1,6 +1,7 @@
 <script>
 import Speech from "speak-tts";
 import axios from "axios";
+import fileDownload from "js-file-download";
 
 export default {
   data() {
@@ -13,120 +14,52 @@ export default {
       htmlCode: "",
       text: "",
       langOption: null,
+      audioCreated: false,
+      lang: null,
+      voiceName: null
     };
   },
   methods: {
     async speechCreate() {
+      let speech;
+
       if (this.langOption == "ID") {
-        const speech = new Speech();
-        speech.setLanguage("id-ID");
-        await speech.init({
-          volume: 0.5,
-          lang: "id-ID",
-          rate: 1,
-          pitch: 1,
-          name: "Google Bahasa Indonesia",
-          voiceURI: "Google Bahasa Indonesia",
-          splitSentences: true,
-        });
-        speech.speak({
-          text: this.textDefault,
-        });
-      } else if (this.langOption === "EN") {
-        const speech = new Speech();
-        speech.init({
-          volume: 1,
-          lang: "en-GB",
-          rate: 1,
-          pitch: 1,
-          voice: "Google UK English Female",
-          splitSentences: true,
-        });
-        speech.speak({
-          text: this.textDefault,
-        });
-      } else if (this.langOption === "JV") {
-        const speech = new Speech();
+        speech = new Speech();
+        this.lang = "id-ID";
+        this.voiceName = "Google Bahasa Indonesia";
+      } else if (this.langOption == "EN") {
+        speech = new Speech();
+        this.lang = "en-GB";
+        this.voiceName = "Google UK English Female";
+      } else if (this.langOption == "JV") {
+        speech = new Speech();
         speech.setLanguage("jv-ID");
-        await speech.init({
-          volume: 0.5,
-          lang: "jv-ID",
-          rate: 1,
-          pitch: 1,
-          name: "Microsoft Siti Online (Natural) - Javanese (Indonesia)",
-          voiceURI: "Microsoft Siti Online (Natural) - Javanese (Indonesia)",
-          splitSentences: true,
-          listeners: {
-            onvoiceschanged: (voices) => {
-              console.log("Event voiceschanged", voices);
-            },
-          },
-        });
-        speech
-          .speak({
-            text: this.textDefault,
-          })
-          .then(() => {
-            console.log("Success !");
-          });
-        console.log(voice);
-      } else if (this.langOption === "FR") {
-        const speech = new Speech();
+        this.lang = "jv-ID";
+        this.voiceName = "Microsoft Siti Online (Natural) - Javanese (Indonesia)";
+      } else if (this.langOption == "FR") {
+        speech = new Speech();
         speech.setLanguage("fr-FR");
-        await speech.init({
-          volume: 0.5,
-          lang: "fr-FR",
-          rate: 1,
-          pitch: 1,
-          name: "Microsoft Eloise Online (Natural) - French (France)",
-          voiceURI: "Microsoft Eloise Online (Natural) - French (France)",
-          splitSentences: true,
-          listeners: {
-            onvoiceschanged: (voices) => {
-              console.log("Event voiceschanged", voices);
-            },
-          },
-        });
-        speech
-          .speak({
-            text: this.textDefault,
-          })
-          .then(() => {
-            console.log("Success !");
-          });
-        console.log(voice);
+        this.lang = "fr-FR";
+        this.voiceName = "Microsoft Eloise Online (Natural) - French (France)";
       }
-    },
-    async speakArabic() {
-      event.preventDefault();
-      try {
-        const speech = new Speech();
-        speech.setLanguage("jv-ID");
-        await speech.init({
-          volume: 0.5,
-          lang: "jv-ID",
-          rate: 1,
-          pitch: 1,
-          name: "Microsoft Eloise Online (Natural) - French (France)",
-          voiceURI: "Microsoft Eloise Online (Natural) - French (France)",
-          splitSentences: true,
-          listeners: {
-            onvoiceschanged: (voices) => {
-              console.log("Event voiceschanged", voices);
-            },
-          },
-        });
-        speech
-          .speak({
-            text: this.textDefault,
-          })
-          .then(() => {
-            console.log("Success !");
-          });
-        console.log(voice);
-      } catch (err) {
-        console.log(err);
-      }
+      await speech.init({
+        volume: 0.5,
+        lang: this.lang,
+        rate: 1,
+        pitch: 1,
+        name: this.voiceName,
+        voiceURI: this.voiceName,
+        splitSentences: true,
+      });
+      speech.speak({
+        text: this.textDefault,
+      });
+
+      // const blob = await speech.toBlob(this.textDefault);
+      // const url = URL.createObjectURL(blob);
+
+      // const downloader = new FileDownloader();
+      // downloader.download(url, "audio.mp3", "audio/mpeg");
     },
     readFile() {
       this.file = this.$refs.doc.files[0];
@@ -148,6 +81,42 @@ export default {
     },
     clearText() {
       this.textDefault = "";
+    },
+    async audioDownload() {
+      event.preventDefault();
+      if (speech) {
+        const audioBlob = await speech.speakToFile({
+          text: this.textDefault,
+          format: "audio/wav",
+        });
+        const downloader = new FileDownloader();
+        downloader.download(audioBlob, "audio.wav");
+      }
+    },
+    async downloadAudio() {
+      try {
+        const response = await axios.post(
+          "http://localhost:8000/speech",
+          {
+            textDefault: this.textDefault,
+            langOption: this.langOption,
+          },
+          {
+            responseType: "blob",
+          }
+        );
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement("a");
+        link.href = url;
+        link.setAttribute(
+          "download",
+          `${this.textDefault.replace(/\s+/g, "_")}.mp3`
+        );
+        document.body.appendChild(link);
+        link.click();
+      } catch (error) {
+        console.error(error);
+      }
     },
   },
 };
@@ -183,7 +152,7 @@ Online (Natural) - Indonesian (Indonesia)" voiceURI : "Microsoft Gadis Online
               v-model="langOption"
               @change=""
             >
-              <option selected>Open this select menu</option>
+              <option selected disabled>Select a language</option>
               <option value="ID">Bahasa Indonesia</option>
               <option value="EN">Bahasa Inggris</option>
               <option value="JV">Bahasa Jawa</option>
@@ -203,7 +172,11 @@ Online (Natural) - Indonesian (Indonesia)" voiceURI : "Microsoft Gadis Online
                 Clear
               </button>
             </div>
-
+            <div class="d-flex flex-row">
+              <button @click="audioDownload()" class="btn btn-primary">
+                Download
+              </button>
+            </div>
             <!-- <button @click="()" class="btn btn-primary">
               Stop
             </button> -->

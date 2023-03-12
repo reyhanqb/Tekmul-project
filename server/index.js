@@ -1,83 +1,81 @@
 import cors from "cors";
 import express from "express";
-import translate from "translate-google";
-import http from "http"
+import pkg from "speak-tts"
+import fs from "fs"
+import fileDownload from "js-file-download"
 
+
+const { Speech } = pkg
 const app = express();
 // const port = 8000;
 
 const port = process.env.PORT || 8000;
 
-const server = http.createServer(app);
+// const server = http.createServer(app);
 
 
 
-server.listen(port, () => {
-  console.log(`Server running on port ${port}`);
-});
+// server.listen(port, () => {
+//   console.log(`Server running on port ${port}`);
+// });
 
 app.use(cors());
 app.use(express.json());
 
-// app.listen(port, () => {
-//   console.log(`App listening on port ${port}`);
-// });
+app.listen(port, () => {
+  console.log(`App listening on port ${port}`);
+});
 
-app.post("/translate", async (req, res) => {
-  let text = req.body.textDefault;
+
+app.post("/speech", async (req, res) => {
+  const text = req.body.textDefault;
+  const lang = req.body.langOption;
+
   try {
-    const translatedText = await translate(text, { from: "id", to: "en" }).then(
-      (res) => {
-        console.log(res);
+    const speech = new Speech();
+    await speech.init({
+      volume: 0.5,
+      lang: lang,
+      rate: 1,
+      pitch: 1,
+      splitSentences: true,
+    });
+    const audio = speech.speak({
+      text: text,
+    });
+    const filename = `${text.replace(/\s+/g, "_")}.mp3`;
+    const filePath = `${__dirname}/${filename}`;
+    fs.writeFile(filePath, audio, "binary", (err) => {
+      if (err) {
+        console.error(err);
+        res.status(500).send("Error creating audio file");
+      } else {
+        res.download(filePath, filename, (err) => {
+          if (err) {
+            console.error(err);
+            res.status(500).send("Error downloading audio file");
+          } else {
+            fs.unlink(filePath, (err) => {
+              if (err) {
+                console.error(err);
+              }
+            });
+          }
+        });
       }
-    );
-    res.send({
-      status: 200,
-      message: "Success",
-      data: translatedText,
     });
   } catch (err) {
-    console.log(err);
+    console.error(err);
+    res.status(500).send("Error creating audio");
   }
 });
 
-// app.get("/translate/downloadtxt", async (req, res) => {
-//   let text = req.body.translateDefault;
-//   try {
-//      const blob = new Blob([text], { type: "text/plain" });
-//     const downloadUrl = URL.createObjectURL(blob);
-
-//     res.setHeader(
-//       "Content-Disposition",
-//       'attachment; filename="translated.txt"'
-//     );
-//     res.setHeader("Content-Type", "text/plain");
-
-//     http.get(downloadUrl, (fileRes) => {
-//       fileRes.pipe(res);
-//   } catch (err) {
-//     console.log(err);
-//   }
-// });
-
-app.get("/translate/downloadtxt", async (req, res) => {
-  let textDef = req.body.textDef;
+app.get("/download/audiofile", async (req, res) => {
+  let text = req.body.textDefault
   try {
-    if (!textDef) {
-      throw new Error("No text provided");
-    }
-    const blob = new Blob([textDef], { type: "text/plain" });
-    const downloadUrl = URL.createObjectURL(blob);
-
-    res.setHeader(
-      "Content-Disposition",
-      'attachment; filename="translated.txt"'
-    );
-    res.setHeader("Content-Type", "text/plain");
-
-    const stream = request.get(downloadUrl);
-    stream.pipe(res);
-  } catch (err) {
-    console.log(err);
+        
+  } catch (error) {
+    
   }
-});
+})
+
